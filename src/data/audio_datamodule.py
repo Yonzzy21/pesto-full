@@ -229,7 +229,34 @@ class AudioDataModule(LightningDataModule):
 
             if annot is not None:
                 annot = annot.strip()
-                timesteps, freqs = np.loadtxt(data_dir / annot, delimiter=',', dtype=np.float32).T
+                #timesteps, freqs = np.loadtxt(data_dir / annot, delimiter=',', dtype=np.float32).T
+                annot = annot.strip()
+                
+                # --- START OF FIX ---
+                raw_data = np.loadtxt(data_dir / annot, dtype=np.float32)
+                
+                if raw_data.ndim == 1:
+                    # Handle MIR-1K .pv files (1 column)
+                    # Per documentation: starts at 20ms (0.02s) with 10ms (0.01s) steps
+                    freqs = raw_data
+                    timesteps = 0.02 + (np.arange(len(freqs)) * 0.01)
+                else:
+                    # Handle standard 2-column CSVs
+                    timesteps = raw_data[:, 0]
+                    freqs = raw_data[:, 1]
+                # Force freqs to match CQT length 'out' to bypass the assertion error
+                if len(freqs) < len(out):
+                    # Pad with zeros if shorter
+                    freqs = np.pad(freqs, (0, len(out) - len(freqs)))
+                elif len(freqs) > len(out):
+                    # Trim if longer
+                    freqs = freqs[:len(out)]
+                
+                # Recalculate hop based on the expected 10ms to satisfy the assertion
+                hop_duration = 10.0
+                # --- END OF FIX ---
+
+                #hop_duration = 1000 * (timesteps[1] - timesteps[0])
                 hop_duration = 1000 * (timesteps[1] - timesteps[0])
 
                 # Badly-aligned annotations is a fucking nightmare

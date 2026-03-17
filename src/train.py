@@ -10,6 +10,10 @@ import torch
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
+import numpy as np
+np.float = float
+np.complex = complex  # Sometimes needed for nnAudio too
+np.int = int          # Good to have for safety
 
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 # ------------------------------------------------------------------------------------ #
